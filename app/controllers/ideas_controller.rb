@@ -1,6 +1,6 @@
 class IdeasController < ApplicationController
   before_action :set_idea, only: [:show, :edit, :update, :destroy]
-
+  before_action :authorize_user!, only: [:destroy, :update]
   # GET /ideas
   # GET /ideas.json
   def index
@@ -10,6 +10,8 @@ class IdeasController < ApplicationController
   # GET /ideas/1
   # GET /ideas/1.json
   def show
+    @comments = @idea.comments.all
+    @comment = @idea.comments.build
   end
 
   # GET /ideas/new
@@ -24,7 +26,7 @@ class IdeasController < ApplicationController
   # POST /ideas
   # POST /ideas.json
   def create
-    @idea = Idea.new(idea_params)
+    @idea = Idea.new(idea_params.merge(user: current_user))
 
     respond_to do |format|
       if @idea.save
@@ -71,4 +73,12 @@ class IdeasController < ApplicationController
     def idea_params
       params.require(:idea).permit(:name, :description, :picture)
     end
+
+    def authorize_user! 
+      if current_user != @idea.user
+        flash[:alert] = "You cannot touch this idea!"
+        redirect_back(fallback_location: root_path)
+      end
+    end
+
 end
